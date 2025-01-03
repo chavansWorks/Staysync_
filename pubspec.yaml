@@ -1,0 +1,31 @@
+name: staysync
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  carousel_slider: ^5.0.0
+  file_picker: ^8.1.7
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: ^18.0.1
+  http: ^1.2.2
+  http_parser: ^4.0.2
+  image_picker: ^1.1.2
+  path_provider: ^2.1.5
+  shared_preferences: ^2.3.4
+  socket_io: ^1.0.1
+  socket_io_client: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - lib/assets/bgimage.jpg
