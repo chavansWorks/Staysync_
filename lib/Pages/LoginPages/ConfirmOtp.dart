@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/API/api.dart';
 import 'package:staysync/Pages/LoginPages/SecreataryRegiPage.dart';
+import 'package:staysync/Pages/ResidentPages/ResidentHomePage.dart';
 import 'package:staysync/Pages/homescreenDesign.dart';
 
 class OtpLoginScreen extends StatefulWidget {
@@ -28,6 +29,9 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
       if (result != null) {
         String token = result['token'];
         String userType = result['userType'];
+        prefs.setString(userType, 'UserType');
+
+        print(userType + "UserType");
         if (userType == "UnregisteredUser") {
           Navigator.pushReplacement(
             context,
@@ -40,6 +44,14 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => HomeScreen(),
+            ),
+          );
+        } else if (userType == "Resident") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              
+              builder: (context) => ResidentScreen(),
             ),
           );
         }
@@ -55,6 +67,30 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
     } else {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Please enter OTP')));
+    }
+  }
+
+  void proceedToOtpScreen() async {
+    // Call sendOtp and wait for the result
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    var mobileNumber = await prefs.getString("mobile_number");
+
+    bool otpSent = await APIservice.sendOtp(mobileNumber!);
+
+    // Proceed only if OTP is sent successfully
+    if (otpSent) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Otp Has been Send to Your Device ${mobileNumber}')));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OtpLoginScreen(mobileNumber: mobileNumber),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send OTP, please try again')),
+      );
     }
   }
 
@@ -117,6 +153,7 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
 
   void resendOtp() {
     // Handle OTP resend logic here
+    proceedToOtpScreen();
     print("OTP resent to mobile: ${widget.mobileNumber}");
   }
 

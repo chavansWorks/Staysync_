@@ -3,39 +3,85 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/API/api.dart';
+import 'package:staysync/Database/DatabaseHelper.dart';
 import 'package:staysync/Pages/Dashboardcard.dart';
 import 'package:staysync/Pages/Drawer.dart';
 import 'package:staysync/Pages/IconWithButton.dart';
 import 'package:staysync/Pages/LoginPages/LogoutPage.dart';
 import 'package:staysync/Pages/UserInfo.dart';
 
-class HomeScreen extends StatefulWidget {
+class ResidentScreen extends StatefulWidget {
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _ResidentScreenState createState() => _ResidentScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _ResidentScreenState extends State<ResidentScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late Future<UserInfo> userInfoFuture;
 
-  final List<DashboardItem> dashboardItems = [
-    DashboardItem(Icons.receipt_long, "All Bills"),
-    DashboardItem(Icons.bar_chart, "Balance sheet"),
-    DashboardItem(Icons.account_balance, "Balance manager"),
-    DashboardItem(Icons.apartment, "Wings"),
-    DashboardItem(Icons.group, "Members"),
-    DashboardItem(Icons.directions_car, "Vehicle"),
-    DashboardItem(Icons.event, "Events"),
-    DashboardItem(Icons.rule, "Rules"),
-    DashboardItem(Icons.phone, "Emergency numbers"),
+  final List<DashboardItem> residentDashboardItems = [
+    DashboardItem(Icons.person, "Resident Details"),
+    DashboardItem(Icons.apartment, "Flat Information"),
+    DashboardItem(Icons.event, "Community Events"),
+    DashboardItem(Icons.phone, "Emergency Contacts"),
+    DashboardItem(Icons.access_alarm, "Service Requests"),
+    DashboardItem(Icons.local_parking, "Parking Details"),
+    DashboardItem(Icons.notifications, "Notifications"),
+    DashboardItem(Icons.help, "Help & Support"),
   ];
 
   @override
   void initState() {
     super.initState();
-    // Fetch user information from SharedPreferences
-    userInfoFuture = _loadUserInfo();
+    userInfoFuture = _getUserInfo(); // Calling the method here
     _fetchUserInfo();
+  }
+
+  Future<UserInfo> _getUserInfo() async {
+    print('asdaa');
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedUserInfo = prefs.getString('user_info');
+    final mobile_number = prefs.getString('mobile_number');
+    final building_id = prefs.getString('building_id');
+    print('building_id.toString(): $building_id');
+
+    await APIservice.getResidentInfo(mobile_number!, building_id.toString());
+    if (savedUserInfo != null) {
+      return UserInfo.fromJson(jsonDecode(savedUserInfo));
+    } else {
+      throw Exception('User info not found');
+    }
+  }
+
+  Future<UserInfo> _getUserInfo1() async {
+    try {
+      // Retrieve SharedPreferences instance
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      // Get saved user information
+      String? savedUserInfo = prefs.getString('user_info');
+      final mobileNumber = prefs.getString('mobile_number');
+      final buildingId = prefs.getString('building_id');
+
+      print('building_id.toString(): $buildingId');
+
+      // Validate mobileNumber and buildingId before proceeding
+      if (mobileNumber == null || buildingId == null) {
+        throw Exception('Mobile number or building ID is missing');
+      }
+
+      // Fetch updated resident information from API
+      var data = await APIservice.getResidentInfo(mobileNumber, buildingId);
+      // If `user_info` is found in SharedPreferences, return it
+      if (savedUserInfo != null) {
+        return UserInfo.fromJson(jsonDecode(savedUserInfo));
+      } else {
+        throw Exception('User info not found in SharedPreferences');
+      }
+    } catch (e) {
+      print('Error in _getUserInfo: $e');
+      rethrow; // Rethrow the exception after logging
+    }
   }
 
   Future<UserInfo> _loadUserInfo() async {
@@ -52,15 +98,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
     final mobile_number = prefs.getString('mobile_number');
+    print("SharedPreferences");
 
     if (mobile_number == null) {
       print("Mobile number not found in SharedPreferences");
       return;
+    } else {
+      print("Mobile number found in SharedPreferences");
     }
 
     try {
-      await APIservice.getUserInfo(mobile_number);
-      print("Data Retrived: ");
+      await APIservice.getResidentInfo(
+          mobile_number, DatabaseHelper.colBuildingId.toString());
+      print("Resident Data Retrieved: ");
     } catch (e) {
       print("Error fetching user info: $e");
     }
@@ -151,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              "Notice: Covid-19 Detected In Our Condo...",
+                              "Notice: Upcoming Maintenance Tomorrow...",
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: 14,
@@ -170,13 +220,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.all(16.0),
                       child: CarouselSlider(
                         items: [
-                          // 1st Image of Slider
                           _buildCarouselItem(
                               "https://media.istockphoto.com/id/978975308/vector/upcoming-events-neon-signs-vector-upcoming-events-design-template-neon-sign-light-banner-neon.jpg?s=612x612&w=0&k=20&c=VMCoJJda9L17HVkFOFB3fyDpjC4Qu2AsyYn3u4T4F4c="),
-                          // 2nd Image of Slider
                           _buildCarouselItem(
                               "https://static.vecteezy.com/system/resources/previews/014/435/755/non_2x/attention-please-announcement-sign-with-megaphone-flat-illustration-important-alert-icon-vector.jpg"),
-                          // 3rd Image of Slider
                           _buildCarouselItem(
                               "https://4.imimg.com/data4/WM/AR/MY-25909262/notice-board-250x250.jpg"),
                         ],
@@ -197,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 360.0, left: 16),
                     child: Text(
-                      "Main Features",
+                      "Resident Features",
                       style: TextStyle(
                           color: Colors.blue[800],
                           fontSize: 18,
@@ -211,14 +258,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: GridView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
-                        itemCount: dashboardItems.length,
+                        itemCount: residentDashboardItems.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
                           crossAxisSpacing: 20,
                           mainAxisSpacing: 18,
                         ),
                         itemBuilder: (context, index) {
-                          final item = dashboardItems[index];
+                          final item = residentDashboardItems[index];
                           return DashboardCard(item: item);
                         },
                       ),
@@ -251,16 +298,15 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icons.add_box,
               label: "Delivery",
               onPressed: () {
-                print("Settings button pressed");
+                print("Delivery button pressed");
               },
             ),
             const SizedBox(width: 20), // Space for the QR Code button
-
             IconWithTextButton(
               icon: Icons.apartment,
               label: "Building",
               onPressed: () {
-                print("Settings button pressed");
+                print("Building button pressed");
               },
             ),
             IconWithTextButton(
