@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:staysync/API/api.dart';
-import 'package:staysync/Pages/homescreenDesign.dart';
+import 'package:staysync/Pages/SecerataryPages/SecretaryHomeScreen.dart';
 
 class BuildingRegistrationPage extends StatefulWidget {
   final String secretaryName;
@@ -331,7 +331,7 @@ class _BuildingRegistrationPageState extends State<BuildingRegistrationPage> {
       if (result) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
+          MaterialPageRoute(builder: (context) => SecretaryHomeScreen()),
         );
       }
     } else {

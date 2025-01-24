@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/API/api.dart';
 import 'package:staysync/Pages/LoginPages/SecreataryRegiPage.dart';
-import 'package:staysync/Pages/ResidentPages/ResidentHomePage.dart';
-import 'package:staysync/Pages/homescreenDesign.dart';
+import 'package:staysync/Pages/ResidentPages/ResidentHomeScreen.dart';
+import 'package:staysync/Pages/SecerataryPages/SecretaryHomeScreen.dart';
 
 class OtpLoginScreen extends StatefulWidget {
   final String mobileNumber;
@@ -21,7 +21,7 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
     if (_otpController.text.isNotEmpty) {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-      var mobile_number = prefs.getString('mobile_number');
+      var mobile_number = await prefs.getString('mobile_number');
       final result =
           await APIservice.confirmOtp(widget.mobileNumber, _otpController.text);
       print(result.toString() + "Res");
@@ -29,9 +29,14 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
       if (result != null) {
         String token = result['token'];
         String userType = result['userType'];
-        prefs.setString(userType, 'UserType');
+        print("User Type : " + userType.toString());
 
-        print(userType + "UserType");
+        await prefs.setString('UserType', userType);
+
+        var userTypew =
+            prefs.getString('UserType'); // Retrieve the 'UserType' value.
+
+        print(userType + "   UserType" + "   " + userTypew.toString());
         if (userType == "UnregisteredUser") {
           Navigator.pushReplacement(
             context,
@@ -43,15 +48,14 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => HomeScreen(),
+              builder: (context) => SecretaryHomeScreen(),
             ),
           );
         } else if (userType == "Resident") {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              
-              builder: (context) => ResidentScreen(),
+              builder: (context) => ResidentHomeScreen(),
             ),
           );
         }

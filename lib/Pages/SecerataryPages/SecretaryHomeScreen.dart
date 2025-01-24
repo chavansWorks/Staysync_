@@ -3,85 +3,42 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/API/api.dart';
-import 'package:staysync/Database/DatabaseHelper.dart';
 import 'package:staysync/Pages/Dashboardcard.dart';
 import 'package:staysync/Pages/Drawer.dart';
 import 'package:staysync/Pages/IconWithButton.dart';
 import 'package:staysync/Pages/LoginPages/LogoutPage.dart';
+import 'package:staysync/Pages/ResidentPages/Calendar.dart';
+import 'package:staysync/Pages/ResidentPages/ResidentHomeScreen.dart';
+import 'package:staysync/Pages/ResidentPages/Rules.dart';
 import 'package:staysync/Pages/UserInfo.dart';
 
-class ResidentScreen extends StatefulWidget {
+class SecretaryHomeScreen extends StatefulWidget {
   @override
-  _ResidentScreenState createState() => _ResidentScreenState();
+  _SecretaryHomeScreenState createState() => _SecretaryHomeScreenState();
 }
 
-class _ResidentScreenState extends State<ResidentScreen> {
+class _SecretaryHomeScreenState extends State<SecretaryHomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late Future<UserInfo> userInfoFuture;
 
-  final List<DashboardItem> residentDashboardItems = [
-    DashboardItem(Icons.person, "Resident Details"),
-    DashboardItem(Icons.apartment, "Flat Information"),
-    DashboardItem(Icons.event, "Community Events"),
-    DashboardItem(Icons.phone, "Emergency Contacts"),
-    DashboardItem(Icons.access_alarm, "Service Requests"),
-    DashboardItem(Icons.local_parking, "Parking Details"),
-    DashboardItem(Icons.notifications, "Notifications"),
-    DashboardItem(Icons.help, "Help & Support"),
+  final List<DashboardItem> dashboardItems = [
+    DashboardItem(Icons.receipt_long, "All Bills"),
+    DashboardItem(Icons.bar_chart, "Balance sheet"),
+    DashboardItem(Icons.account_balance, "Balance manager"),
+    DashboardItem(Icons.apartment, "Wings"),
+    DashboardItem(Icons.group, "Members"),
+    DashboardItem(Icons.directions_car, "Vehicle"),
+    DashboardItem(Icons.event, "Events"),
+    DashboardItem(Icons.rule, "Rules"),
+    DashboardItem(Icons.phone, "Emergency numbers"),
   ];
 
   @override
   void initState() {
     super.initState();
-    userInfoFuture = _getUserInfo(); // Calling the method here
+    // Fetch user information from SharedPreferences
+    userInfoFuture = _loadUserInfo();
     _fetchUserInfo();
-  }
-
-  Future<UserInfo> _getUserInfo() async {
-    print('asdaa');
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? savedUserInfo = prefs.getString('user_info');
-    final mobile_number = prefs.getString('mobile_number');
-    final building_id = prefs.getString('building_id');
-    print('building_id.toString(): $building_id');
-
-    await APIservice.getResidentInfo(mobile_number!, building_id.toString());
-    if (savedUserInfo != null) {
-      return UserInfo.fromJson(jsonDecode(savedUserInfo));
-    } else {
-      throw Exception('User info not found');
-    }
-  }
-
-  Future<UserInfo> _getUserInfo1() async {
-    try {
-      // Retrieve SharedPreferences instance
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-      // Get saved user information
-      String? savedUserInfo = prefs.getString('user_info');
-      final mobileNumber = prefs.getString('mobile_number');
-      final buildingId = prefs.getString('building_id');
-
-      print('building_id.toString(): $buildingId');
-
-      // Validate mobileNumber and buildingId before proceeding
-      if (mobileNumber == null || buildingId == null) {
-        throw Exception('Mobile number or building ID is missing');
-      }
-
-      // Fetch updated resident information from API
-      var data = await APIservice.getResidentInfo(mobileNumber, buildingId);
-      // If `user_info` is found in SharedPreferences, return it
-      if (savedUserInfo != null) {
-        return UserInfo.fromJson(jsonDecode(savedUserInfo));
-      } else {
-        throw Exception('User info not found in SharedPreferences');
-      }
-    } catch (e) {
-      print('Error in _getUserInfo: $e');
-      rethrow; // Rethrow the exception after logging
-    }
   }
 
   Future<UserInfo> _loadUserInfo() async {
@@ -98,19 +55,15 @@ class _ResidentScreenState extends State<ResidentScreen> {
   Future<void> _fetchUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
     final mobile_number = prefs.getString('mobile_number');
-    print("SharedPreferences");
 
     if (mobile_number == null) {
       print("Mobile number not found in SharedPreferences");
       return;
-    } else {
-      print("Mobile number found in SharedPreferences");
     }
 
     try {
-      await APIservice.getResidentInfo(
-          mobile_number, DatabaseHelper.colBuildingId.toString());
-      print("Resident Data Retrieved: ");
+      await APIservice.getUserInfo(mobile_number);
+      print("Data Retrived: ");
     } catch (e) {
       print("Error fetching user info: $e");
     }
@@ -201,7 +154,7 @@ class _ResidentScreenState extends State<ResidentScreen> {
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              "Notice: Upcoming Maintenance Tomorrow...",
+                              "Notice: Covid-19 Detected In Our Condo...",
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: 14,
@@ -220,10 +173,13 @@ class _ResidentScreenState extends State<ResidentScreen> {
                       padding: const EdgeInsets.all(16.0),
                       child: CarouselSlider(
                         items: [
+                          // 1st Image of Slider
                           _buildCarouselItem(
                               "https://media.istockphoto.com/id/978975308/vector/upcoming-events-neon-signs-vector-upcoming-events-design-template-neon-sign-light-banner-neon.jpg?s=612x612&w=0&k=20&c=VMCoJJda9L17HVkFOFB3fyDpjC4Qu2AsyYn3u4T4F4c="),
+                          // 2nd Image of Slider
                           _buildCarouselItem(
                               "https://static.vecteezy.com/system/resources/previews/014/435/755/non_2x/attention-please-announcement-sign-with-megaphone-flat-illustration-important-alert-icon-vector.jpg"),
+                          // 3rd Image of Slider
                           _buildCarouselItem(
                               "https://4.imimg.com/data4/WM/AR/MY-25909262/notice-board-250x250.jpg"),
                         ],
@@ -244,7 +200,7 @@ class _ResidentScreenState extends State<ResidentScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 360.0, left: 16),
                     child: Text(
-                      "Resident Features",
+                      "Main Features",
                       style: TextStyle(
                           color: Colors.blue[800],
                           fontSize: 18,
@@ -258,15 +214,95 @@ class _ResidentScreenState extends State<ResidentScreen> {
                       child: GridView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
-                        itemCount: residentDashboardItems.length,
+                        itemCount: dashboardItems.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
                           crossAxisSpacing: 20,
                           mainAxisSpacing: 18,
                         ),
                         itemBuilder: (context, index) {
-                          final item = residentDashboardItems[index];
-                          return DashboardCard(item: item);
+                          final item = dashboardItems[index];
+                          return DashboardCard(
+                            item: item,
+                            onTap: () {
+                              switch (item.label) {
+                                case "All Bills":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            SecretaryHomeScreen()),
+                                  );
+                                  break;
+                                case "Balance sheet":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            SecretaryHomeScreen()),
+                                  );
+                                  break;
+                                case "Balance manager":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            SecretaryHomeScreen()),
+                                  );
+                                  break;
+                                case "Wings":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            SecretaryHomeScreen()),
+                                  );
+                                  break;
+                                case "Members":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            SecretaryHomeScreen()),
+                                  );
+                                  break;
+                                case "Vehicle":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            SecretaryHomeScreen()),
+                                  );
+                                  break;
+                                case "Events":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            EventCalendarScreen()),
+                                  );
+                                  break;
+                                case "Rules":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            RulesOfSocietyPage()),
+                                  );
+                                  break;
+                                case "Emergency numbers":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            SecretaryHomeScreen()),
+                                  );
+                                  break;
+                                default:
+                                  print("No action defined for ${item.label}");
+                              }
+                            },
+                          );
                         },
                       ),
                     ),
@@ -298,15 +334,16 @@ class _ResidentScreenState extends State<ResidentScreen> {
               icon: Icons.add_box,
               label: "Delivery",
               onPressed: () {
-                print("Delivery button pressed");
+                print("Settings button pressed");
               },
             ),
             const SizedBox(width: 20), // Space for the QR Code button
+
             IconWithTextButton(
               icon: Icons.apartment,
               label: "Building",
               onPressed: () {
-                print("Building button pressed");
+                print("Settings button pressed");
               },
             ),
             IconWithTextButton(

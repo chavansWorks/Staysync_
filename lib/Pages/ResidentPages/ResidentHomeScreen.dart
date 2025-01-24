@@ -3,21 +3,23 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/API/api.dart';
+import 'package:staysync/Database/DatabaseHelper.dart';
 import 'package:staysync/Pages/Dashboardcard.dart';
 import 'package:staysync/Pages/Drawer.dart';
 import 'package:staysync/Pages/IconWithButton.dart';
 import 'package:staysync/Pages/LoginPages/LogoutPage.dart';
+import 'package:staysync/Pages/ResidentPages/Calendar.dart';
+import 'package:staysync/Pages/ResidentPages/Rules.dart';
 import 'package:staysync/Pages/UserInfo.dart';
 
-class HomeScreen extends StatefulWidget {
+class ResidentHomeScreen extends StatefulWidget {
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _ResidentHomeScreenState createState() => _ResidentHomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _ResidentHomeScreenState extends State<ResidentHomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late Future<UserInfo> userInfoFuture;
-
   final List<DashboardItem> dashboardItems = [
     DashboardItem(Icons.receipt_long, "All Bills"),
     DashboardItem(Icons.bar_chart, "Balance sheet"),
@@ -33,9 +35,55 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch user information from SharedPreferences
-    userInfoFuture = _loadUserInfo();
+    userInfoFuture = _getUserInfo(); // Calling the method here
     _fetchUserInfo();
+  }
+
+  Future<UserInfo> _getUserInfo() async {
+    print('asdaa');
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedUserInfo = prefs.getString('user_info');
+    final mobile_number = prefs.getString('mobile_number');
+    final building_id = prefs.getString('building_id');
+    print('building_id.toString(): $building_id');
+
+    await APIservice.getResidentInfo(mobile_number!, building_id.toString());
+    if (savedUserInfo != null) {
+      return UserInfo.fromJson(jsonDecode(savedUserInfo));
+    } else {
+      throw Exception('User info not found');
+    }
+  }
+
+  Future<UserInfo> _getUserInfo1() async {
+    try {
+      // Retrieve SharedPreferences instance
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      // Get saved user information
+      String? savedUserInfo = prefs.getString('user_info');
+      final mobileNumber = prefs.getString('mobile_number');
+      final buildingId = prefs.getString('building_id');
+
+      print('building_id.toString(): $buildingId');
+
+      // Validate mobileNumber and buildingId before proceeding
+      if (mobileNumber == null || buildingId == null) {
+        throw Exception('Mobile number or building ID is missing');
+      }
+
+      // Fetch updated resident information from API
+      var data = await APIservice.getResidentInfo(mobileNumber, buildingId);
+      // If `user_info` is found in SharedPreferences, return it
+      if (savedUserInfo != null) {
+        return UserInfo.fromJson(jsonDecode(savedUserInfo));
+      } else {
+        throw Exception('User info not found in SharedPreferences');
+      }
+    } catch (e) {
+      print('Error in _getUserInfo: $e');
+      rethrow; // Rethrow the exception after logging
+    }
   }
 
   Future<UserInfo> _loadUserInfo() async {
@@ -52,15 +100,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
     final mobile_number = prefs.getString('mobile_number');
+    print("SharedPreferences");
 
     if (mobile_number == null) {
       print("Mobile number not found in SharedPreferences");
       return;
+    } else {
+      print("Mobile number found in SharedPreferences");
     }
 
     try {
-      await APIservice.getUserInfo(mobile_number);
-      print("Data Retrived: ");
+      await APIservice.getResidentInfo(
+          mobile_number, DatabaseHelper.colBuildingId.toString());
+      print("Resident Data Retrieved: ");
     } catch (e) {
       print("Error fetching user info: $e");
     }
@@ -110,12 +162,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Blue background with rounded corners and notice card
             PreferredSize(
               preferredSize: const Size.fromHeight(200),
               child: Stack(
                 children: [
-                  // Blue background container
                   Container(
                     height: 280,
                     decoration: BoxDecoration(
@@ -126,7 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  // Notice Card at the top
                   Padding(
                     padding:
                         const EdgeInsets.only(top: 100.0, left: 16, right: 16),
@@ -151,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              "Notice: Covid-19 Detected In Our Condo...",
+                              "Notice: Water supply maintenance tomorrow.",
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: 14,
@@ -163,7 +212,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  // Bottom card for community app notice
                   Padding(
                     padding: const EdgeInsets.only(top: 160.0),
                     child: Padding(
@@ -197,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 360.0, left: 16),
                     child: Text(
-                      "Main Features",
+                      "Resident Features",
                       style: TextStyle(
                           color: Colors.blue[800],
                           fontSize: 18,
@@ -205,21 +253,86 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 310.0),
+                    padding: const EdgeInsets.only(top: 290.0),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.all(15.0),
                       child: GridView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
                         itemCount: dashboardItems.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 20,
-                          mainAxisSpacing: 18,
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 15,
+                          mainAxisSpacing: 15,
+                          childAspectRatio: 2 / 1.3,
                         ),
                         itemBuilder: (context, index) {
                           final item = dashboardItems[index];
-                          return DashboardCard(item: item);
+                          return DashboardCard(
+                            item: item,
+                            onTap: () {
+                              // Perform a unique action based on the card
+                              switch (item.label) {
+                                case "Notices":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            ResidentHomeScreen()),
+                                  );
+                                  break;
+                                case "Events":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            EventCalendarScreen()),
+                                  );
+                                  break;
+                                case "Maintenance":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            ResidentHomeScreen()),
+                                  );
+                                  break;
+                                case "Residents":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            ResidentHomeScreen()),
+                                  );
+                                  break;
+                                case "Parking":
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            ResidentHomeScreen()),
+                                  );
+                                  break;
+                                case "Emergency":
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: Text("Emergency"),
+                                      content: Text(
+                                          "Emergency contacts are displayed here!"),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: Text("OK"),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  break;
+                              }
+                            },
+                          );
                         },
                       ),
                     ),
@@ -227,7 +340,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 25),
           ],
         ),
       ),
@@ -243,29 +355,31 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icons.home,
               label: "Home",
               onPressed: () {
-                LogoutHelper.logout(context);
                 print("Home button pressed");
               },
             ),
             IconWithTextButton(
-              icon: Icons.add_box,
-              label: "Delivery",
+              icon: Icons.rule,
+              label: "Rules",
               onPressed: () {
-                print("Settings button pressed");
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RulesOfSocietyPage()),
+                );
               },
             ),
             const SizedBox(width: 20), // Space for the QR Code button
 
             IconWithTextButton(
-              icon: Icons.apartment,
-              label: "Building",
+              icon: Icons.event,
+              label: "Events",
               onPressed: () {
-                print("Settings button pressed");
+                print("Feedback button pressed");
               },
             ),
             IconWithTextButton(
               icon: Icons.person,
-              label: "You",
+              label: "Profile",
               onPressed: () {
                 _scaffoldKey.currentState?.openDrawer();
               },

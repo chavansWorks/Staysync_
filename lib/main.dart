@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/Pages/LoginPages/SignIn.dart';
-import 'package:staysync/Pages/ResidentPages/ResidentHomePage.dart';
-import 'package:staysync/Pages/homescreenDesign.dart';
+import 'package:staysync/Pages/ResidentPages/ResidentHomeScreen.dart';
+import 'package:staysync/Pages/SecerataryPages/SecretaryHomeScreen.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+
+import 'Pages/ResidentPages/event_provider.dart';
 
 // 1. Global navigator key for centralized navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => EventProvider(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -33,13 +41,20 @@ class MyApp extends StatelessWidget {
       bool isTokenExpired = JwtDecoder.isExpired(token);
       print("Token Expired: $isTokenExpired");
 
-      var UserType = prefs.getString('UserType');
+      var UserType = await prefs.getString(
+          'UserType'); // Retrieve the 'UserType' value.      print("User Type : " + UserType.toString());
+
       // Navigate to appropriate page based on token expiration status
-      if (!isTokenExpired || UserType == 'Secretary') {
+      if (!isTokenExpired && UserType == 'Secretary') {
         // Valid token, navigate to HomeScreen
-        navigateTo(HomeScreen());
-      } else if (UserType == 'Resident') {
-        navigateTo(ResidentScreen());
+        print("User Type : " + UserType.toString());
+        print("Navigate to SecretaryHomeScreen");
+
+        navigateTo(SecretaryHomeScreen());
+      } else if (!isTokenExpired && UserType == 'Resident') {
+        print("Navigate to ResidentScreen");
+
+        navigateTo(ResidentHomeScreen());
       } else {
         // Token expired, navigate to SignInScreen
         navigateTo(SignInScreen());
