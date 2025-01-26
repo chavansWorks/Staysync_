@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:staysync/Database/db_helper.dart';
 import 'package:staysync/Pages/ResidentPages/Event.dart';
-import '../../API/db_helper.dart';
 
 class EventProvider with ChangeNotifier {
   Map<DateTime, List<Event>> _events = {};

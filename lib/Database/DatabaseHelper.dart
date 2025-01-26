@@ -49,6 +49,8 @@ class DatabaseHelper {
   static const rescolCreatedAt = 'created_at';
   static const rescolUpdatedAt = 'updated_at';
 
+  static const StaffData = 'StaffData';
+
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
@@ -162,6 +164,22 @@ class DatabaseHelper {
     )
   ''');
 
+    await db.execute('''
+  CREATE TABLE IF NOT EXISTS ${StaffData} (
+    userid TEXT PRIMARY KEY,
+    user_name TEXT NOT NULL,
+    user_gender TEXT,
+    user_dob TEXT,
+    mobile_number TEXT NOT NULL,
+    login_id TEXT,
+    usertype TEXT NOT NULL,
+    staff_id TEXT NOT NULL,
+    staff_type TEXT NOT NULL,
+    join_date TEXT,
+    qr_code TEXT
+  )
+''');
+
     print("Tables created successfully.");
   }
 
@@ -170,6 +188,29 @@ class DatabaseHelper {
     final db = await database;
     return await db.insert(tableSecretaryUserData, user,
         conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> insertStaffData(List<Map<String, dynamic>> staffData) async {
+    final db = await database; // Access the database instance
+    Batch batch = db.batch(); // Create a batch for bulk operations
+
+    for (var staff in staffData) {
+      batch.insert(
+        'StaffData', // Target table
+        staff, // Data to insert
+        conflictAlgorithm:
+            ConflictAlgorithm.replace, // Replace if conflict occurs
+      );
+    }
+
+    try {
+      await batch.commit(
+          noResult:
+              true); // Execute the batch and ignore results for better performance
+      print("Staff data inserted successfully.");
+    } catch (e) {
+      print("Error inserting staff data: $e"); // Log any errors
+    }
   }
 
   Future<int> insertResident(Map<String, dynamic> resident) async {
@@ -187,6 +228,13 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getUsers() async {
     final db = await database;
     return await db.query(tableSecretaryUserData);
+  }
+
+  // Assuming 'database' is a getter that initializes the SQLite database.
+  Future<List<Map<String, dynamic>>> getStaff() async {
+    final db = await database;
+    return await db
+        .query('StaffData'); // Assuming 'StaffData' is your table name
   }
 
   // Update a user's data

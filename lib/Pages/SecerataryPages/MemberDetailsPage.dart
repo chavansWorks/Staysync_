@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/API/api.dart';
 import 'package:staysync/Database/DatabaseHelper.dart';
-import 'package:staysync/Pages/ResidentInfo.dart';
+import 'package:staysync/Pages/SecerataryPages/ResidentInfo.dart';
 import 'package:staysync/Pages/UserInfo.dart';
 import 'package:transformable_list_view/transformable_list_view.dart';
 

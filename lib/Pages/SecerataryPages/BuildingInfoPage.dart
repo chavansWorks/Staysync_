@@ -9,8 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/API/api.dart';
 import 'package:staysync/Database/DatabaseHelper.dart';
 import 'package:intl/intl.dart';
-import 'package:staysync/Pages/ResidentInfo.dart';
+import 'package:staysync/Pages/SecerataryPages/ResidentInfo.dart';
 import 'package:staysync/Pages/SecerataryPages/MemberDetailsPage.dart';
+import 'package:staysync/Pages/SecerataryPages/qrcsvupload.dart';
 import 'package:staysync/Pages/UserInfo.dart';
 
 class BuildingInfoScreen extends StatefulWidget {
@@ -73,6 +74,15 @@ class _BuildingInfoScreenState extends State<BuildingInfoScreen> {
     } catch (e) {
       print("Error sending data to API: $e");
     }
+  }
+
+  Future<void> _navigateToStaff() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UploadCSVPage(),
+      ),
+    );
   }
 
   Future<void> _navigateToResident() async {
@@ -225,6 +235,10 @@ class _BuildingInfoScreenState extends State<BuildingInfoScreen> {
                     onPressed: _navigateToResident,
                     child: Text('See all Resident'),
                   ),
+                  ElevatedButton(
+                    onPressed: _navigateToStaff,
+                    child: Text('See all Staff'),
+                  )
                 ],
               );
             }

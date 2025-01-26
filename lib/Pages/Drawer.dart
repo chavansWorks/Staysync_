@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/API/api.dart';
 import 'package:staysync/Database/DatabaseHelper.dart';
-import 'package:staysync/Pages/BuildingInfoPage.dart';
+import 'package:staysync/Pages/SecerataryPages/BuildingInfoPage.dart';
 import 'package:staysync/Pages/LoginPages/LogoutPage.dart';
 import 'package:staysync/Pages/UserInfo.dart';
 

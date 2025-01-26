@@ -5,10 +5,80 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/API/URLs.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:staysync/Database/DatabaseHelper.dart';
-import 'package:staysync/Pages/ResidentInfo.dart';
+import 'package:staysync/Pages/SecerataryPages/ResidentInfo.dart';
 import 'package:staysync/Pages/UserInfo.dart';
 
 class APIservice {
+  //  AAAS
+
+  static Future<Map<String, dynamic>> fetchStaffInfo(
+      String mobileNumber, String buildingId) async {
+    if (mobileNumber.isEmpty || buildingId.isEmpty) {
+      print("Invalid input: mobileNumber or buildingId is empty.");
+      return {'success': false, 'message': 'Invalid input'};
+    }
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(GetStaffInfo), // Replace with your API endpoint
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'mobile_number': mobileNumber,
+              'building_id': buildingId,
+            }),
+          )
+          .timeout(const Duration(seconds: 10)); // Timeout after 10 seconds
+
+      if (response.statusCode == 200) {
+        print("Staff info fetched successfully: ${response.body}");
+
+        // Decode the response body and extract the staff data
+        var data = jsonDecode(response.body);
+
+        // Ensure that the 'data' and 'data.data' fields exist and are not null
+        if (data['data'] != null && data['data']['data'] != null) {
+          List<Map<String, dynamic>> staffData =
+              List<Map<String, dynamic>>.from(data['data']['data']);
+
+          // Insert staff data into the database
+          await insertStaff(staffData);
+
+          return {'success': true, 'data': staffData};
+        } else {
+          // Handle the case where the data is null or empty
+          print("Staff data not found in response.");
+          return {'success': false, 'message': 'No staff data found'};
+        }
+      } else {
+        // Handle API response errors
+        print(
+            "Failed to fetch staff info: ${response.statusCode} - ${response.body}");
+        return {'success': false, 'message': 'Failed to fetch staff info'};
+      }
+    } catch (e) {
+      // Catch and log errors
+      String errorMessage = "Error fetching staff info: $e";
+      print(
+          "Error fetching staff info. Mobile: $mobileNumber, Building: $buildingId. Error: $errorMessage");
+      return {'success': false, 'message': errorMessage};
+    }
+  }
+
+// Function to insert staff data using DatabaseHelper
+  static Future<void> insertStaff(List<Map<String, dynamic>> staffData) async {
+    try {
+      // Create an instance of DatabaseHelper
+      final dbHelper = DatabaseHelper();
+
+      // Call the insertStaffData method
+      await dbHelper.insertStaffData(staffData);
+      print("Staff data inserted successfully.");
+    } catch (e) {
+      print("Error inserting staff data: $e");
+    }
+  }
+
   static Future<bool> registerBuilding({
     required String fullName,
     required File identityProof, // Image as File
