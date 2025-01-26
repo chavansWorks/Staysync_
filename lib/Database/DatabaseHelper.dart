@@ -165,7 +165,7 @@ class DatabaseHelper {
   ''');
 
     await db.execute('''
-  CREATE TABLE IF NOT EXISTS ${StaffData} (
+  CREATE TABLE IF NOT EXISTS $StaffData (
     userid TEXT PRIMARY KEY,
     user_name TEXT NOT NULL,
     user_gender TEXT,
@@ -282,7 +282,7 @@ class DatabaseHelper {
       var tables = [
         tableSecretaryUserData,
         restableResidentData,
-        'OtherTable2',
+        StaffData
       ]; // Add all your table names here
 
       // Delete all records from each table

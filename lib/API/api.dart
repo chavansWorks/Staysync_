@@ -11,7 +11,7 @@ import 'package:staysync/Pages/UserInfo.dart';
 class APIservice {
   //  AAAS
 
-  static Future<Map<String, dynamic>> fetchStaffInfo(
+  static Future<Map<String, dynamic>> fetchStaffInfoAPI(
       String mobileNumber, String buildingId) async {
     if (mobileNumber.isEmpty || buildingId.isEmpty) {
       print("Invalid input: mobileNumber or buildingId is empty.");
@@ -42,7 +42,7 @@ class APIservice {
               List<Map<String, dynamic>>.from(data['data']['data']);
 
           // Insert staff data into the database
-          await insertStaff(staffData);
+          await insertStaff(staffData, buildingId);
 
           return {'success': true, 'data': staffData};
         } else {
@@ -66,7 +66,8 @@ class APIservice {
   }
 
 // Function to insert staff data using DatabaseHelper
-  static Future<void> insertStaff(List<Map<String, dynamic>> staffData) async {
+  static Future<void> insertStaff(
+      List<Map<String, dynamic>> staffData, String building_id) async {
     try {
       // Create an instance of DatabaseHelper
       final dbHelper = DatabaseHelper();

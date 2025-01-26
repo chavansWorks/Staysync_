@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:staysync/Database/DatabaseHelper.dart';
 import 'package:staysync/Pages/LoginPages/SignIn.dart';
 import 'package:staysync/Pages/ResidentPages/ResidentHomeScreen.dart';
 import 'package:staysync/Pages/SecerataryPages/SecretaryHomeScreen.dart';
@@ -32,6 +33,7 @@ class MyApp extends StatelessWidget {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('Token');
     final String? mobile_number = prefs.getString('mobile_number');
+    final dbHelper = DatabaseHelper();
 
     if (token != null) {
       print("Token: $token");

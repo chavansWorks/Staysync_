@@ -1,13 +1,9 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:csv/csv.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:staysync/API/api.dart';
 import 'package:staysync/Database/DatabaseHelper.dart';
 import 'package:transformable_list_view/transformable_list_view.dart';
+
+import 'package:staysync/API/api.dart';
 
 class StaffPage extends StatefulWidget {
   @override
@@ -35,6 +31,9 @@ class _StaffPageState extends State<StaffPage> {
     }
 
     try {
+      final result =
+          await APIservice.fetchStaffInfoAPI(mobileNumber, buildingId);
+
       // Fetch staff data from the database
       final dbHelper = DatabaseHelper();
       final staffData = await dbHelper.getStaff();
@@ -43,6 +42,9 @@ class _StaffPageState extends State<StaffPage> {
         print("Staff data retrieved successfully.");
         // Process staff data here
         print(staffData);
+        setState(() {
+          staffFuture = Future.value(staffData); // Update the staff data
+        });
       } else {
         print("No staff data found in the database.");
       }
