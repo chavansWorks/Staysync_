@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:csv/csv.dart';
@@ -13,6 +12,8 @@ import 'package:staysync/Pages/SecerataryPages/ResidentInfo.dart';
 import 'package:staysync/Pages/SecerataryPages/MemberDetailsPage.dart';
 import 'package:staysync/Pages/SecerataryPages/qrcsvupload.dart';
 import 'package:staysync/Pages/UserInfo.dart';
+
+import '../IconWithButton.dart';
 
 class BuildingInfoScreen extends StatefulWidget {
   @override
@@ -231,13 +232,23 @@ class _BuildingInfoScreenState extends State<BuildingInfoScreen> {
                       ],
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: _navigateToResident,
-                    child: Text('See all Resident'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CustomButton(
+                        label: 'Residents',
+                        onTap: _navigateToResident,
+                        icon: Icons.person_search,
+                      ),
+                      CustomButton(
+                        label: 'Staff',
+                        onTap: _navigateToStaff,
+                        icon: Icons.group,
+                      ),
+                    ],
                   ),
-                  ElevatedButton(
-                    onPressed: _navigateToStaff,
-                    child: Text('See all Staff'),
+                  SizedBox(
+                    height: 80,
                   )
                 ],
               );
