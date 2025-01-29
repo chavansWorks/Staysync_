@@ -5,6 +5,7 @@ import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:staysync/API/api.dart';
 import 'package:staysync/Database/DatabaseHelper.dart';
 import 'package:staysync/Pages/SecerataryPages/ResidentInfo.dart';
@@ -24,7 +25,6 @@ class _MemberDetailsPageState extends State<MemberDetailsPage> {
   void initState() {
     super.initState();
     residentsFuture = DatabaseHelper().getResidents();
-
     userInfoFuture = _getUserInfo(); // Calling the method here
     _fetchUserInfo();
   }
@@ -190,6 +190,15 @@ class _MemberDetailsPageState extends State<MemberDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Members Details '), actions: [
+        IconButton(
+            onPressed: () {
+              setState(() {
+                residentsFuture = DatabaseHelper().getResidents();
+              });
+            },
+            icon: const Icon(Icons.refresh))
+      ]),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(

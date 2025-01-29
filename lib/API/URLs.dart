@@ -1,4 +1,4 @@
-const BaseUrl = "https://891b-103-182-131-73.ngrok-free.app/";
+const BaseUrl = "https://406a-103-174-159-24.ngrok-free.app/";
 
 const otplogin = "${BaseUrl}users/otplogin";
 const otpverify = "${BaseUrl}users/confirmotp";
