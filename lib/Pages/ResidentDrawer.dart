@@ -1,13 +1,9 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:staysync/API/api.dart';
-import 'package:staysync/Database/DatabaseHelper.dart';
 import 'package:staysync/Pages/SecerataryPages/BuildingInfoPage.dart';
 import 'package:staysync/Pages/LoginPages/LogoutPage.dart';
 import 'package:staysync/Pages/UserInfo.dart';
-
 import 'ResidentPages/Resident.dart';
 
 class CustomDrawer extends StatefulWidget {
@@ -16,76 +12,62 @@ class CustomDrawer extends StatefulWidget {
 }
 
 class _CustomDrawerState extends State<CustomDrawer> {
-  late Future<List<Map<String, dynamic>>> usersFuture;
+  late Future<Object> userInfoFuture;
 
   @override
   void initState() {
     super.initState();
-    usersFuture = _loadUserInfo();
+    userInfoFuture = _getUserInfo();
   }
 
-  // Function to load user info from the database
-  Future<List<Map<String, dynamic>>> _loadUserInfo() async {
-    final db = DatabaseHelper();
-    return await db.getUsers(); // Fetch user info from the database
-  }
-
-  void logout(BuildContext context) async {
-    LogoutHelper.logout(context);
-  }
-
-Future<UserInfo> _getUserInfo() async {
+  // Function to load user info from SharedPreferences
+Future<Object> _getUserInfo() async {
   try {
     // Retrieve SharedPreferences instance
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Get saved user information
+    // Get saved user information from SharedPreferences
     String? savedUserInfo = prefs.getString('user_info');
     final mobileNumber = prefs.getString('mobile_number');
-    final buildingId = prefs.getString('building_id');
-    final userType = prefs.getString('UserType') ?? ''; // Get the user type
+    final buildingId = prefs.getString('building_id'); // This should be retrieved separately
+    final userType = prefs.getString('UserType') ?? '';
 
-    print('building_id.toString(): $buildingId');
+    print('Saved User Info: $savedUserInfo'); // Check if data exists
+    
+    if (savedUserInfo != null) {
+      // Decode the saved JSON string
+      final residentData = jsonDecode(savedUserInfo);
+      print('Decoded Resident Info: $residentData'); // Check decoded data
 
-    // Validate mobileNumber and buildingId before proceeding
-    if (mobileNumber == null || buildingId == null) {
-      throw Exception('Mobile number or building ID is missing');
-    }
+      // Extract building_id directly from the decoded data
+      final decodedBuildingId = residentData['building_id'];
+      print('Decoded building_id: $decodedBuildingId');
 
-    // Check if the userType is "Resident" and fetch the respective data
-    if (userType == 'Resident') {
-      // Fetch updated resident information from API for Resident
-      var data = await APIservice.getResident_Info(mobileNumber, buildingId);
-
-      // If `user_info` is found in SharedPreferences, return it
-      // if (savedUserInfo != null) {
-      //   return ResidentInfo.fromJson(jsonDecode(savedUserInfo));
-      // } else {
-      //   throw Exception('User info not found in SharedPreferences');
-      // }
-    } else if (userType == 'Secretary') {
-      // If userType is "Secretary", use existing method to fetch the user info
-      if (savedUserInfo != null) {
-        return UserInfo.fromJson(jsonDecode(savedUserInfo));
+      // Depending on user type, return the relevant data
+      if (userType == 'Resident') {
+        return ResidentInfo.fromJson(residentData); // Return ResidentInfo
       } else {
         throw Exception('User info not found in SharedPreferences');
       }
     } else {
-      throw Exception('Unknown user type');
+      throw Exception('User info not found in SharedPreferences');
     }
   } catch (e) {
     print('Error in _getUserInfo: $e');
-    rethrow; // Rethrow the exception after logging
+    rethrow;
   }
-  // Add a throw statement to ensure the function does not complete normally
-  throw Exception('Failed to get user info');
 }
+
+  // Logout function
+  void logout(BuildContext context) async {
+    LogoutHelper.logout(context);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: FutureBuilder<List<Map<String, dynamic>>>(
-        future: usersFuture, // Wait for user data
+      child: FutureBuilder<Object>(
+        future: userInfoFuture, // Wait for user data from SharedPreferences
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -95,12 +77,23 @@ Future<UserInfo> _getUserInfo() async {
             return Center(child: Text("Error loading user data"));
           }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          if (!snapshot.hasData) {
             return Center(child: Text("No user data found"));
           }
 
-          // Now that data is available, proceed with displaying the drawer content
-          final users = snapshot.data!;
+          final userInfo = snapshot.data;
+
+          // Determine whether it's a ResidentInfo or UserInfo object
+          String name = '';
+          String mobileNumber = '';
+          if (userInfo is ResidentInfo) {
+            name = userInfo.residentName ?? 'Unknown';
+            mobileNumber = userInfo.mobileNumber ?? 'Unknown';
+          } else if (userInfo is UserInfo) {
+            name = userInfo.name ?? 'Unknown';
+            mobileNumber = userInfo.mobileNumber ?? 'Unknown';
+          }
+
           return ListView(
             padding: EdgeInsets.zero,
             children: [
@@ -127,7 +120,7 @@ Future<UserInfo> _getUserInfo() async {
                     ),
                     SizedBox(height: 10),
                     Text(
-                      'Name: ${users[0]['name']}', // Display name
+                      'Name: $name',
                       style: TextStyle(
                         fontSize: 18,
                         color: Colors.white,
@@ -135,7 +128,7 @@ Future<UserInfo> _getUserInfo() async {
                       ),
                     ),
                     Text(
-                      'Mobile: ${users[0]['mobile_number']}', // Display mobile number
+                      'Mobile: $mobileNumber',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white70,
@@ -186,7 +179,6 @@ Future<UserInfo> _getUserInfo() async {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 onTap: () {
-                  _getUserInfo();
                   Navigator.pop(context); // Close the drawer
                 },
               ),
@@ -230,9 +222,4 @@ Future<UserInfo> _getUserInfo() async {
       ),
     );
   }
-}
-
-// Logout function
-void logout(BuildContext context) async {
-  LogoutHelper.logout(context);
 }

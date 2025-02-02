@@ -117,10 +117,11 @@ class _MemberDetailsPageState extends State<MemberDetailsPage> {
     final building_id = prefs.getString('building_id');
     print('building_id.toString(): $building_id');
 
-    await APIservice.getResidentInfo(mobile_number!, building_id.toString());
+    await APIservice.getResident_Info(mobile_number!, building_id!);
     if (savedUserInfo != null) {
       setState(() {
     isLoading = false; // Stop shimmer effect
+    debugPrint('User info found in SharedPreferences: $savedUserInfo');
   });
       return UserInfo.fromJson(jsonDecode(savedUserInfo));
     } else {
@@ -147,8 +148,8 @@ class _MemberDetailsPageState extends State<MemberDetailsPage> {
     }
 
     try {
-      await APIservice.getResidentInfo(
-          mobile_number, DatabaseHelper.colBuildingId.toString());
+      await APIservice.getResident_Info(
+          mobile_number, prefs.getString('building_id')!);
   //     setState(() {
   //   isLoading = false; // Start shimmer effect
   // });
@@ -181,6 +182,13 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
       title: const Text('Member Details'),
+      leading: IconButton(
+        icon: const Icon(Icons.refresh),
+        onPressed: () {
+          _loadUserInfo();
+        },
+        
+      ),
     ),
     body: Container(
       decoration: const BoxDecoration(

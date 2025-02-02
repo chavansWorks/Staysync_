@@ -1,7 +1,9 @@
+// staff_link.dart
 import 'package:flutter/material.dart';
+import 'package:staysync/API/api.dart';
 import 'package:flutter/services.dart';
 import 'package:staysync/Pages/LoginPages/SecreataryRegiPage.dart';
-
+// Import the API service
 import '../SecerataryPages/qrscanner.dart';
 
 class StaffLink extends StatefulWidget {
@@ -11,6 +13,94 @@ class StaffLink extends StatefulWidget {
 
 class _StaffLinkState extends State<StaffLink> {
   TextEditingController _mobileController = TextEditingController();
+
+  // This variable will hold the maid info returned from the API.
+  Map<String, dynamic>? maidInfo;
+
+  // For demonstration, let’s assume flatId is known or selected somewhere.
+  // In a real app, this could be retrieved from the resident’s saved info.
+  String flatId = "YOUR_FLAT_ID";
+
+  // Method to call the API with the entered mobile number
+  Future<void> _getMaidInfoByMobile() async {
+    final staffMobile = _mobileController.text.trim();
+    if (staffMobile.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Please enter a mobile number.")));
+      return;
+    }
+
+    final result = await APIservice.getMaidInfo(staffMobileNumber: staffMobile);
+    if (result != null) {
+      setState(() {
+        maidInfo = result['data'];
+      });
+      // Optionally show a dialog or a bottom sheet with the details and a confirmation button.
+      _showMaidInfoDialog();
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Maid not found or an error occurred.")));
+    }
+  }
+
+  // Method to call the API using a scanned QR code that returns a staff id
+  Future<void> _getMaidInfoByStaffId(String staffId) async {
+    final result = await APIservice.getMaidInfo(staffId: staffId);
+    if (result != null) {
+      setState(() {
+        maidInfo = result['data'];
+      });
+      _showMaidInfoDialog();
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Maid not found or an error occurred.")));
+    }
+  }
+
+  // Dialog to display maid information and confirm linking
+  void _showMaidInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Maid Info"),
+          content: maidInfo != null
+              ? Text("Name: ${maidInfo!['name']}\nMobile: ${maidInfo!['mobile']}")
+              : Text("No info available."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // Call addStaffToResident using the staff_id from maidInfo.
+                if (maidInfo != null && maidInfo!['staff_id'] != null) {
+                  final response = await APIservice.addStaffToResident(
+                    staffId: maidInfo!['staff_id'].toString(),
+                    flatId: flatId,
+                  );
+                  Navigator.of(context).pop(); // Close the dialog
+                  if (response != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Maid linked successfully!")),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to link maid.")),
+                    );
+                  }
+                }
+              },
+              child: Text("Confirm"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildMobileTF() {
     return Column(
@@ -37,7 +127,7 @@ class _StaffLinkState extends State<StaffLink> {
               border: InputBorder.none,
               contentPadding: EdgeInsets.only(top: 14.0),
               prefixIcon: Icon(Icons.phone, color: Colors.white),
-              hintText: 'Enter your Mobile Number',
+              hintText: 'Enter Maid Mobile Number',
               hintStyle: TextStyle(color: Colors.white),
             ),
           ),
@@ -46,59 +136,47 @@ class _StaffLinkState extends State<StaffLink> {
     );
   }
 
-  Widget _buildSignupBtn() {
-    return GestureDetector(
-      onTap: () => {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SignupScreen(),
-          ),
-        )
-      },
-      child: RichText(
-        text: TextSpan(
-          children: [
-            TextSpan(
-              text: 'Do you want to register your building? ',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16.0,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            TextSpan(
-              text: 'Sign up',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildProceedBtn() {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 25.0),
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {}, // Removed API function
+        onPressed: _getMaidInfoByMobile,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
           padding: EdgeInsets.symmetric(vertical: 16.0),
         ),
         child: Text(
-          'Proceed to OTP',
+          'Proceed',
           style: TextStyle(
             color: Colors.black,
             fontSize: 18.0,
             fontWeight: FontWeight.bold,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildQrBtn() {
+    return IconButton(
+      onPressed: () async {
+        // Navigate to the Scanner page and wait for the result.
+        // In this example, we assume that when a QR code is scanned,
+        // the staff id is returned. You may need to modify your Scanner to do this.
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => Scanner()),
+        );
+        // Assume the scanner returns a staff id (as a String)
+        if (result != null && result is String) {
+          _getMaidInfoByStaffId(result);
+        }
+      },
+      icon: Icon(
+        Icons.qr_code_scanner_rounded,
+        color: Colors.white,
+        size: 100,
       ),
     );
   }
@@ -143,7 +221,7 @@ class _StaffLinkState extends State<StaffLink> {
                     SizedBox(height: 120.0),
                     Center(
                       child: Text(
-                        'Link Staff',
+                        'Link Maid',
                         style: TextStyle(
                           color: Colors.white,
                           fontFamily: 'Regular Italic',
@@ -158,13 +236,9 @@ class _StaffLinkState extends State<StaffLink> {
                     SizedBox(height: 20.0),
                     _buildProceedBtn(),
                     SizedBox(height: 20.0),
-                    Text("OR", style: TextStyle(color: Colors.white,fontSize: 17)),
+                    Text("OR", style: TextStyle(color: Colors.white, fontSize: 17)),
                     SizedBox(height: 20.0),
-                    IconButton(onPressed: () {   
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => Scanner()));
-                    } ,
-                    icon: Icon(
-                    Icons.qr_code_scanner_rounded, color: const Color.fromARGB(224, 255, 255, 255), size: 100,)),
+                    _buildQrBtn(),
                     SizedBox(height: 20.0),
                     Text("Scan QR Code", style: TextStyle(color: Colors.white)),
                   ],
