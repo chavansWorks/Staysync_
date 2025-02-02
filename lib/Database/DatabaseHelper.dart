@@ -218,6 +218,12 @@ class DatabaseHelper {
     return await db.insert(restableResidentData, resident,
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
+  Future<int> insertResident2(Map<String, dynamic> resident) async {
+    final db = await database;
+    return await db.insert(restableResidentData, resident,
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
 
   Future<List<Map<String, dynamic>>> getResidents() async {
     final db = await database;
