@@ -8,8 +8,6 @@ import 'package:staysync/Database/DatabaseHelper.dart';
 import 'package:staysync/Pages/SecerataryPages/ResidentInfo.dart';
 import 'package:staysync/Pages/UserInfo.dart';
 
-import '../Pages/ResidentPages/Resident.dart';
-
 class APIservice {
   //  AAAS
 
@@ -501,78 +499,8 @@ class APIservice {
       print("Error in submitting Excel data: $error");
     }
   }
-  
-//for resident
-static Future<void> getResidentInfo(String mobileNumber) async {
-  print("Fetching Resident Info");
 
-  try {
-    // Retrieve token from SharedPreferences
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? jwtToken = prefs.getString('Token'); // Get the token stored
-
-    if (jwtToken == null) {
-      throw Exception('No token found');
-    }
-
-    // Make the POST request to fetch user info
-    final response = await http.post(
-      Uri.parse(GetResidentDetails), // Replace with actual URL
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': '$jwtToken',
-      },
-      body: jsonEncode({
-        'mobile_number': mobileNumber,
-      }),
-    );
-
-    print("Raw response body: ${response.body}"); // Log the raw response
-    Map<String, dynamic> responseData = jsonDecode(response.body);
-
-    if (responseData['status'] == true) {
-      final userData = responseData['data'];
-      print(userData);
-
-      if (userData != null) {
-        // Map the user data to ResidentInfo model
-        ResidentInfo resident = ResidentInfo.fromJson(userData);
-
-        // Insert the resident data into the database
-        Map<String, dynamic> residentMap = {
-          'userid': resident.userId,
-          'user_name': resident.name,
-          'user_gender': resident.gender,
-          'user_dob': resident.dob,
-          'mobile_number': resident.mobileNumber,
-          'usertype': resident.userType,
-          'building_id': resident.buildingId,
-          'wing_no': resident.wingNo,
-          'flat_no': resident.flatNo,
-          'floor_no': resident.floorNo,
-          'resident_name': resident.residentName, 
-          "resident_id": resident.residentId,
-
-        };
-
-        // Insert the resident data into the database
-        await DatabaseHelper().insertResident(residentMap);
-
-        print("Resident data saved to the database.");
-      } else {
-        throw Exception('No resident data available');
-      }
-    } else {
-      throw Exception('Failed to fetch user data: ${responseData['message']}');
-    }
-  } catch (err) {
-    print("Error getting user info: $err");
-    throw Exception('Error fetching user info');
-  }
-}
-
-//for secretary
-static Future<void> getResident_Info(
+  static Future<void> getResidentInfo(
       String mobileNumber, String buildingId) async {
     print("Fetching Resident Info");
 
@@ -645,95 +573,6 @@ static Future<void> getResident_Info(
     } catch (err) {
       print("Error getting user infsssso: $err");
       throw Exception('Error fetching user info');
-    }
-  }
-
-
-   static Future<Map<String, dynamic>?> getMaidInfo({
-    String? staffMobileNumber,
-    String? staffId,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    // For example, these values could have been saved during login/registration.
-    final mobileNumber = prefs.getString('mobile_number');
-    final jwtToken = prefs.getString('token'); // Assume you save the JWT after login
-
-    final url = Uri.parse(GetMaidInfo);
-
-    // Prepare the request body – include mobile_number (the resident's mobile)
-    // and either staff_mobile_number or staff_id depending on which one is provided.
-    final Map<String, dynamic> body = {
-      'mobile_number': mobileNumber,
-    };
-
-    if (staffMobileNumber != null && staffMobileNumber.isNotEmpty) {
-      body['staff_mobile_number'] = staffMobileNumber;
-    } else if (staffId != null && staffId.isNotEmpty) {
-      body['staff_id'] = staffId;
-    } else {
-      // If neither value is provided, return null or handle as needed.
-      return null;
-    }
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": jwtToken ?? '',
-        },
-        body: jsonEncode(body),
-      );
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data['status'] == true) {
-        return data;
-      } else {
-        // You can print the error message returned by the API for debugging.
-        print("Error getting maid info: ${data['error']}");
-        return null;
-      }
-    } catch (e) {
-      print("Exception in getMaidInfo: $e");
-      return null;
-    }
-  }
-
-  // Add Staff To Resident
-  static Future<Map<String, dynamic>?> addStaffToResident({
-    required String staffId,
-    required String flatId,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final mobileNumber = prefs.getString('mobile_number');
-    final jwtToken = prefs.getString('token');
-
-    final url = Uri.parse(AddStaffToresident);
-
-    final Map<String, dynamic> body = {
-      'mobile_number': mobileNumber,
-      'staff_id': staffId,
-      'flat_id': flatId,
-    };
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": jwtToken ?? '',
-        },
-        body: jsonEncode(body),
-      );
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data['status'] == true) {
-        return data;
-      } else {
-        print("Error adding staff to resident: ${data['error']}");
-        return null;
-      }
-    } catch (e) {
-      print("Exception in addStaffToResident: $e");
-      return null;
     }
   }
 }

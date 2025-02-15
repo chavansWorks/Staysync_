@@ -13,7 +13,6 @@ class LogoutHelper {
     prefs.remove('Token');
     prefs.remove('users');
     prefs.remove('building_id');
-    prefs.clear();
 
     // Clear all tables by deleting data
     await db.clearAllData();

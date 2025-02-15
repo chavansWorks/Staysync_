@@ -1,20 +1,16 @@
 import 'dart:convert';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staysync/API/api.dart';
 import 'package:staysync/Database/DatabaseHelper.dart';
-import 'package:staysync/Pages/ResidentDrawer.dart';
-import 'package:staysync/Pages/LoginPages/LogoutPage.dart';
-import 'package:staysync/Pages/IconWithButton.dart';
-import 'package:staysync/Pages/IconWithButton.dart';
-import 'package:staysync/Pages/ResidentPages/Resident.dart';
-import 'package:staysync/Pages/UserInfo.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:staysync/Pages/Dashboardcard.dart';
+import 'package:staysync/Pages/Drawer.dart';
+import 'package:staysync/Pages/IconWithButton.dart';
+import 'package:staysync/Pages/LoginPages/LogoutPage.dart';
+import 'package:staysync/Pages/ResidentPages/Calendar.dart';
 import 'package:staysync/Pages/ResidentPages/Rules.dart';
-
-import 'Calendar.dart';
-import 'StaffLink.dart';
+import 'package:staysync/Pages/UserInfo.dart';
 
 class ResidentHomeScreen extends StatefulWidget {
   @override
@@ -23,91 +19,149 @@ class ResidentHomeScreen extends StatefulWidget {
 
 class _ResidentHomeScreenState extends State<ResidentHomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late Future<ResidentInfo> userInfoFuture;
-
+  late Future<UserInfo> userInfoFuture;
   final List<DashboardItem> dashboardItems = [
-    DashboardItem(Icons.notifications, "Notices"),
-    DashboardItem(Icons.manage_accounts, "Staff"),
-    DashboardItem(Icons.group, "Residents"),
-    DashboardItem(Icons.cleaning_services, "Maintenance"),
-    DashboardItem(Icons.directions_car, "Parking"),
-    DashboardItem(Icons.phone, "Emergency")
+    DashboardItem(Icons.receipt_long, "All Bills"),
+    DashboardItem(Icons.bar_chart, "Balance sheet"),
+    DashboardItem(Icons.account_balance, "Balance manager"),
+    DashboardItem(Icons.apartment, "Wings"),
+    DashboardItem(Icons.group, "Members"),
+    DashboardItem(Icons.directions_car, "Vehicle"),
+    DashboardItem(Icons.event, "Events"),
+    DashboardItem(Icons.rule, "Rules"),
+    DashboardItem(Icons.phone, "Emergency numbers"),
   ];
 
-@override
-void initState() {
-  super.initState();
-  userInfoFuture = _fetchResidentInfo(); // Call a function to fetch and convert data
-}
-
-Future<ResidentInfo> _fetchResidentInfo() async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  String? savedUserInfo = prefs.getString('user_info');
-  final mobile_number = prefs.getString('mobile_number');
-  
-  await APIservice.getResidentInfo(mobile_number!);
-  List<Map<String, dynamic>> residentsData = await DatabaseHelper().getResidents();
-  print("Residents data from DB: $residentsData");
-
-  await prefs.setString('user_info', jsonEncode(residentsData.first));
-
-  print("Resident info saved in SharedPreferences: ${jsonEncode(residentsData.first)}");
-
-  if (residentsData.isNotEmpty) {
-    // Convert the first resident from the list into a ResidentInfo object
-    return ResidentInfo.fromJson(residentsData.first);
-    
-
-  } else {
-    throw Exception("No resident data found.");
+  @override
+  void initState() {
+    super.initState();
+    userInfoFuture = _getUserInfo(); // Calling the method here
+    _fetchUserInfo();
   }
-}
 
-  // Function to logout
-  void logout(BuildContext context) async {
-    LogoutHelper.logout(context);
+  Future<UserInfo> _getUserInfo() async {
+    print('asdaa');
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedUserInfo = prefs.getString('user_info');
+    final mobile_number = prefs.getString('mobile_number');
+    final building_id = prefs.getString('building_id');
+    print('building_id.toString(): $building_id');
+
+    await APIservice.getResidentInfo(mobile_number!, building_id.toString());
+    if (savedUserInfo != null) {
+      return UserInfo.fromJson(jsonDecode(savedUserInfo));
+    } else {
+      throw Exception('User info not found');
+    }
   }
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    key: _scaffoldKey,
-    appBar: AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      title: FutureBuilder<ResidentInfo>(
-        future: userInfoFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Text(
-              "Welcome, Resident!",
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            );
-          } else if (snapshot.hasError) {
-            debugPrint("Error: ${snapshot.error}");
-            return Text(
-              "Error",
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            );
-          } else if (snapshot.hasData) {
-            return Text(
-              "Welcome, ${snapshot.data!.residentName}",
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            );
-          } else {
-            return Text(
-              "Welcome!",
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            );
-          }
-        },
+
+  Future<UserInfo> _getUserInfo1() async {
+    try {
+      // Retrieve SharedPreferences instance
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      // Get saved user information
+      String? savedUserInfo = prefs.getString('user_info');
+      final mobileNumber = prefs.getString('mobile_number');
+      final buildingId = prefs.getString('building_id');
+
+      print('building_id.toString(): $buildingId');
+
+      // Validate mobileNumber and buildingId before proceeding
+      if (mobileNumber == null || buildingId == null) {
+        throw Exception('Mobile number or building ID is missing');
+      }
+
+      // Fetch updated resident information from API
+      var data = await APIservice.getResidentInfo(mobileNumber, buildingId);
+      // If `user_info` is found in SharedPreferences, return it
+      if (savedUserInfo != null) {
+        return UserInfo.fromJson(jsonDecode(savedUserInfo));
+      } else {
+        throw Exception('User info not found in SharedPreferences');
+      }
+    } catch (e) {
+      print('Error in _getUserInfo: $e');
+      rethrow; // Rethrow the exception after logging
+    }
+  }
+
+  Future<UserInfo> _loadUserInfo() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedUserInfo = prefs.getString('user_info');
+
+    if (savedUserInfo != null) {
+      return UserInfo.fromJson(jsonDecode(savedUserInfo));
+    } else {
+      throw Exception('User info not found');
+    }
+  }
+
+  Future<void> _fetchUserInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final mobile_number = prefs.getString('mobile_number');
+    print("SharedPreferences");
+
+    if (mobile_number == null) {
+      print("Mobile number not found in SharedPreferences");
+      return;
+    } else {
+      print("Mobile number found in SharedPreferences");
+    }
+
+    try {
+      await APIservice.getResidentInfo(
+          mobile_number, DatabaseHelper.colBuildingId.toString());
+      print("Resident Data Retrieved: ");
+    } catch (e) {
+      print("Error fetching user info: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: FutureBuilder<UserInfo>(
+          future: userInfoFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text(
+                "Loading...",
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              );
+            } else if (snapshot.hasError) {
+              return Text(
+                "Error",
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              );
+            } else if (snapshot.hasData) {
+              return Text(
+                snapshot.data!.residentName,
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              );
+            } else {
+              return Text(
+                "No Data",
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              );
+            }
+          },
+        ),
       ),
-    ),
-    drawer: CustomDrawer(),
-    extendBodyBehindAppBar: true,
-    body: SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-           children: [
+      drawer: CustomDrawer(),
+      extendBodyBehindAppBar: true,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             PreferredSize(
               preferredSize: const Size.fromHeight(200),
               child: Stack(
@@ -123,7 +177,8 @@ Widget build(BuildContext context) {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 100.0, left: 16, right: 16),
+                    padding:
+                        const EdgeInsets.only(top: 100.0, left: 16, right: 16),
                     child: Container(
                       height: 48,
                       decoration: BoxDecoration(
@@ -180,7 +235,8 @@ Widget build(BuildContext context) {
                           aspectRatio: 16 / 9,
                           autoPlayCurve: Curves.fastOutSlowIn,
                           enableInfiniteScroll: true,
-                          autoPlayAnimationDuration: Duration(milliseconds: 800),
+                          autoPlayAnimationDuration:
+                              Duration(milliseconds: 800),
                           viewportFraction: 0.8,
                         ),
                       ),
@@ -215,6 +271,7 @@ Widget build(BuildContext context) {
                           return DashboardCard(
                             item: item,
                             onTap: () {
+                              // Perform a unique action based on the card
                               switch (item.label) {
                                 case "Notices":
                                   Navigator.push(
@@ -224,11 +281,12 @@ Widget build(BuildContext context) {
                                             ResidentHomeScreen()),
                                   );
                                   break;
-                                case "Staff":
+                                case "Events":
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => StaffLink()),
+                                        builder: (context) =>
+                                            EventCalendarScreen()),
                                   );
                                   break;
                                 case "Maintenance":
@@ -248,7 +306,12 @@ Widget build(BuildContext context) {
                                   );
                                   break;
                                 case "Parking":
-                                  logout(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            ResidentHomeScreen()),
+                                  );
                                   break;
                                 case "Emergency":
                                   showDialog(
@@ -278,10 +341,9 @@ Widget build(BuildContext context) {
               ),
             ),
           ],
-       
+        ),
       ),
-    ),
-    bottomNavigationBar: BottomAppBar(
+      bottomNavigationBar: BottomAppBar(
         color: Colors.blue[700],
         height: 92,
         shape: const CircularNotchedRectangle(),
@@ -301,9 +363,9 @@ Widget build(BuildContext context) {
               label: "Rules",
               onPressed: () {
                 Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => RulesOfSocietyPage()),
-            );
+                  context,
+                  MaterialPageRoute(builder: (context) => RulesOfSocietyPage()),
+                );
               },
             ),
             const SizedBox(width: 20), // Space for the QR Code button
@@ -331,21 +393,19 @@ Widget build(BuildContext context) {
         child: const Icon(Icons.qr_code_scanner, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-  
-  );
-}
+    );
+  }
 
-  // Helper function to build carousel item
   Widget _buildCarouselItem(String imageUrl) {
     return Container(
-      width: double.infinity,
-      height: 160,
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
+      margin: EdgeInsets.symmetric(horizontal: 5.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10.0),
+        child: Image.network(
+          imageUrl,
           fit: BoxFit.cover,
+          width: 1000.0,
         ),
-        borderRadius: BorderRadius.circular(12.0),
       ),
     );
   }

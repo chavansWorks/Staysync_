@@ -8,8 +8,6 @@ import 'package:staysync/Pages/SecerataryPages/BuildingInfoPage.dart';
 import 'package:staysync/Pages/LoginPages/LogoutPage.dart';
 import 'package:staysync/Pages/UserInfo.dart';
 
-import 'ResidentPages/Resident.dart';
-
 class CustomDrawer extends StatefulWidget {
   @override
   _CustomDrawerState createState() => _CustomDrawerState();
@@ -34,52 +32,36 @@ class _CustomDrawerState extends State<CustomDrawer> {
     LogoutHelper.logout(context);
   }
 
-Future<UserInfo> _getUserInfo() async {
-  try {
-    // Retrieve SharedPreferences instance
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+  Future<UserInfo> _getUserInfo() async {
+    try {
+      // Retrieve SharedPreferences instance
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    // Get saved user information
-    String? savedUserInfo = prefs.getString('user_info');
-    final mobileNumber = prefs.getString('mobile_number');
-    final buildingId = prefs.getString('building_id');
-    final userType = prefs.getString('UserType') ?? ''; // Get the user type
+      // Get saved user information
+      String? savedUserInfo = prefs.getString('user_info');
+      final mobileNumber = prefs.getString('mobile_number');
+      final buildingId = prefs.getString('building_id');
 
-    print('building_id.toString(): $buildingId');
+      print('building_id.toString(): $buildingId');
 
-    // Validate mobileNumber and buildingId before proceeding
-    if (mobileNumber == null || buildingId == null) {
-      throw Exception('Mobile number or building ID is missing');
-    }
+      // Validate mobileNumber and buildingId before proceeding
+      if (mobileNumber == null || buildingId == null) {
+        throw Exception('Mobile number or building ID is missing');
+      }
 
-    // Check if the userType is "Resident" and fetch the respective data
-    if (userType == 'Resident') {
-      // Fetch updated resident information from API for Resident
-      var data = await APIservice.getResident_Info(mobileNumber, buildingId);
-
+      // Fetch updated resident information from API
+      var data = await APIservice.getResidentInfo(mobileNumber, buildingId);
       // If `user_info` is found in SharedPreferences, return it
-      // if (savedUserInfo != null) {
-      //   return ResidentInfo.fromJson(jsonDecode(savedUserInfo));
-      // } else {
-      //   throw Exception('User info not found in SharedPreferences');
-      // }
-    } else if (userType == 'Secretary') {
-      // If userType is "Secretary", use existing method to fetch the user info
       if (savedUserInfo != null) {
         return UserInfo.fromJson(jsonDecode(savedUserInfo));
       } else {
         throw Exception('User info not found in SharedPreferences');
       }
-    } else {
-      throw Exception('Unknown user type');
+    } catch (e) {
+      print('Error in _getUserInfo: $e');
+      rethrow; // Rethrow the exception after logging
     }
-  } catch (e) {
-    print('Error in _getUserInfo: $e');
-    rethrow; // Rethrow the exception after logging
   }
-  // Add a throw statement to ensure the function does not complete normally
-  throw Exception('Failed to get user info');
-}
 
   @override
   Widget build(BuildContext context) {
